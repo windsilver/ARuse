@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Title</title>
+    <script src="jquery-3.3.1.min.js"></script>
+	<script>
+		function getRandomInt(min,max){
+			return Math.floor(Math.random()*(max-min+1))+min;
+		}
+
+		$(function(){
+			var $body = $("body"),
+			    $stage = $("#stage"),
+			    $player = $("#player"),//player
+			    $score = $("#score"),
+			    $start = $("#start"),
+			    $gameover = $("#gameover"),
+			    Music = document.getElementById("music");
+			    died = new Audio("de.mp3");
+
+			    Music.volume=0.5;
+
+
+			    enemy_fall_speed=5;
+			    enemy_fall_speed_max = 20;
+			    enemy_wave = 1;
+			    enemy_wave_gap=440;
+			    hit_test_r = 25;
+			    can_control_player = true;
+			    score = 0;
+			    score_add = 1;
+			    start_first = false;
+
+
+			$player.css("left",($stage.width()-$player.width())/2+"px");
+			$player.css("top",$stage.height()-$player.height() + "px");
+
+
+            $score.css("left",$stage.width()-$score.width()-10+"px");
+            $score.css("top","5px")
+
+            $start.css("top",($stage.height()-$start.height())/2 + "px");
+
+            $gameover.css("top",-500+"px");
+
+
+
+//$body.click(function(){
+			$body.click(function(){
+				if(can_control_player){
+					var x =parseInt($player.css("left"));
+					if(x>15)
+						$player.css("left", x-95+"px");
+					}
+				})
+
+			$body.contextmenu(function(e){
+			 	e.preventDefault();
+			 	var x = parseInt($player.css("left"));
+			 	if(can_control_player){
+			 		if(x<205)
+			 			$player.css("left",x+95+"px");
+			 		}
+			 	})
+
+			 //enemy
+			 function createEnemy(){
+			 	var enemy_pos = [15,110,205];
+			 	for(var i = 0; i<2 ; i++){
+			 		$stage.append("<div class = 'sprite enemy'></div>")
+			 	    var $enemy = $stage.find(".enemy:last");
+			 	    $enemy.data("Wave",enemy_wave);
+			 	    var rand_index = getRandomInt(0,enemy_pos.length-1);
+			 	    var enemy_x = enemy_pos.splice(rand_index,1);
+			 	    $enemy.css("left",enemy_x+"px")
+			 	    $enemy.css("top",-($enemy.height())+"px")
+			 	    console.log(enemy_x);
+			    }
+			}
+
+			//GameStart
+			$body.click(function(){
+					if(!start_first){
+						createEnemy()
+						start_first = true
+						$(start).remove();
+						$gameover.fadeOut(1);
+						Music.play();
+					}
+				})
+			$body.contextmenu(function(e){
+				if(!start_first){
+						createEnemy()
+						start_first = true
+						$(start).remove();
+						$gameover.fadeOut(1);
+						Music.play();
+					}
+				})
+			//GameStart//
+
+			//Reload
+			$body.click(function(){
+				if(start_first){
+					if(can_control_player!=true){
+						location.reload(true);
+					}
+				}
+			})
+			//Reload//
+
+
+			 var timer = setInterval(function(){
+			 	$stage.find(".enemy").each(function(){
+			 		var enemy_y =parseInt($(this).css("top"));
+			 		if(enemy_y >enemy_wave_gap && $(this).data("Wave")==enemy_wave){
+			 			enemy_wave++;
+			 			createEnemy();
+			 		}
+
+			 		var px = parseInt($player.css("left"))+$player.width()/2;
+			 		var py = parseInt($player.css("top"))+$player.height()/2;
+			 		var ex = parseInt($(this).css("left"))+$(this).width()/2;
+			 		var ey = parseInt($(this).css("top"))+$(this).height()/2;
+
+			 		var p_e_dist = Math.sqrt(Math.pow(px-ex,2) + Math.pow(py-ey,2));
+
+			 		if(p_e_dist < hit_test_r*2){
+			 			$gameover.css("top",($stage.height()-$gameover.height())/2 + "px");
+			 			$gameover.fadeIn(1000);
+			 			Music.pause();
+			 			died.play();
+			 			clearInterval(timer);
+			 			can_control_player = false;
+
+			 		}
+
+
+			 		if(enemy_y > $stage.height()){
+			 			$(this).remove();
+			 			return;
+			 		}
+			 		$(this).css("top",enemy_y +enemy_fall_speed +"px");			 		
+			 		$score.html(score);
+			 		score += score_add;
+			 	});
+			 },1000/30)
+			 
+			 var speedup = setInterval(function (){
+			 	if(enemy_fall_speed>=enemy_fall_speed_max){
+			 		enemy_fall_speed = enemy_fall_speed_max;
+			 		clearInterval(speedup);
+			 	}
+			 	enemy_fall_speed+=0.2;
+			 	score += 2 ;
+			 },1000)
+			  
+			 //console.log(getRandomInt(0,2));
+
+
+
+		})
+
+	</script>
+	<style>
+	    body{
+	    	text-align:center;
+	    }	
+		#stage{
+			display:inline-block;
+			text-align:left;
+			background:black;
+			position:relative;
+			top:50px;
+			width:300px;
+			height:500px;
+			overflow:hidden;
+		}
+
+		.sprite{
+			display:inline-block;			
+			position:absolute;
+			width:80px;
+			height:80px;
+
+
+		}
+		#player{
+			background:url(love.png);
+		}
+		.enemy{
+			background:url(11.gif);
+		}
+		.score{
+			color:white;
+			font-weight:bolder;
+			width:100%;
+			height:auto;
+			text-align:right;
+			z-index: 9;
+		}
+		.start{
+			color:white;
+			font-weight:bolder;
+			width:100%;
+			height:auto;
+			text-align:center;
+			z-index: 10;
+		}
+		.gameover{
+			color:white;
+			font-weight:bolder;
+			width:100%;
+			height:auto;
+			text-align:center;
+			z-index: 9;
+		}
+
+	</style> 
+</head>
+<body>
+	<div id = 'stage'>
+		<div id = "score" class="sprite score"></div>
+		<div id ="player" class="sprite player"></div>
+		<div id = "start" class="sprite start"><font size = "20">Press to start</font></div>
+		<div id = "gameover" class="sprite gameover"><font size = "20">Game<br>Over</font></div>
+		<audio  id="music" loop="loop">
+			<source src="8bit28.mp3" type="audio/mp3">
+		</audio>
+
+	</div>
+</body>
+</html>
